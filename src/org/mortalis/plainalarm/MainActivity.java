@@ -1,9 +1,7 @@
 package org.mortalis.plainalarm;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
 import org.home.file_chooser_lib.DirectoryPickerDialog;
 import org.home.file_chooser_lib.FilePickerDialog;
@@ -13,35 +11,29 @@ import android.net.Uri;
 import android.provider.Settings;
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
-import android.content.IntentFilter;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.widget.SeekBar;
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.PorterDuff;
+import android.graphics.Color;
 import android.media.AudioManager;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.graphics.drawable.Animatable;
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
-import android.widget.ArrayAdapter;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.ImageButton;
 import android.view.WindowManager;
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -59,8 +51,6 @@ public class MainActivity extends AppCompatActivity {
   private static int DRAWABLE_PREF_BACKGROUND_DISABLED          = R.drawable.plain_pref_background_disabled;
   private static int DRAWABLE_ALARM_PANEL_BACKGROUND_STOP       = R.drawable.alarm_switcher_background_stop;
   private static int DRAWABLE_ALARM_PANEL_BACKGROUND_START      = R.drawable.alarm_switcher_background_start;
-  private static int DRAWABLE_TOGGLE_BUTTON_BACKGROUND_ENABLED  = R.drawable.toggle_button_enabled;
-  private static int DRAWABLE_TOGGLE_BUTTON_BACKGROUND_DISABLED = R.drawable.toggle_button_disabled;
   
   private boolean textWatcherEnabled = true;
   private boolean isAlarmWakeup;
@@ -75,20 +65,19 @@ public class MainActivity extends AppCompatActivity {
   
   private LinearLayout soundSelector;
   private LinearLayout soundFolderSelector;
-  private Spinner volumeSelector;
-  private Spinner snoozeTimeSelector;
-  private ImageButton bSnooze;
+  
+  private PlainSliderView volumeSlider;
+  private PlainSliderView snoozeSlider;
+  
+  private TextView volumeValueView;
+  private TextView snoozeValueView;
+  
   private LinearLayout panelAlarmState;
   
   private ImageView imageAlarmWakeupAnimation;
   
   private TextView soundPathView;
   private TextView soundFolderPathView;
-  
-  private TextView alarmPresetText1;
-  private TextView alarmPresetText2;
-  private TextView alarmPresetText3;
-  private TextView alarmPresetText4;
   
   private EditText hoursField;
   private EditText minutesField;
@@ -138,20 +127,6 @@ public class MainActivity extends AppCompatActivity {
   }
   
   @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    return true;
-  }
-  
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    int id = item.getItemId();
-    if (id == R.id.action_settings) {
-      return true;
-    }
-    return super.onOptionsItemSelected(item);
-  }
-  
-  @Override
   public void onBackPressed() {
     finishAndRemoveTask();
   }
@@ -192,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
       startActivity(intent);
     }
     
+    // --> Change to USE_EXACT_ALARM, grants automatically
     AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
     if (!alarmManager.canScheduleExactAlarms()) {
       Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, packageUri);
@@ -225,41 +201,50 @@ public class MainActivity extends AppCompatActivity {
     parentView = findViewById(R.id.parentView);
     hoursField = findViewById(R.id.hoursField);
     minutesField = findViewById(R.id.minutesField);
-    
+
     soundSelector = findViewById(R.id.soundSelector);
     soundFolderSelector = findViewById(R.id.soundFolderSelector);
-    volumeSelector = findViewById(R.id.volumeSelector);
-    snoozeTimeSelector = findViewById(R.id.snoozeTimeSelector);
-    bSnooze = findViewById(R.id.bSnooze);
+    
+    volumeSlider = findViewById(R.id.volumeSlider);
+    snoozeSlider = findViewById(R.id.snoozeSlider);
+    
+    volumeValueView = findViewById(R.id.volumeValueView);
+    snoozeValueView = findViewById(R.id.snoozeValueView);
+    
     panelAlarmState = findViewById(R.id.panelAlarmState);
-    
+
     imageAlarmWakeupAnimation = findViewById(R.id.imageAlarmWakeupAnimation);
-    
+
     soundPathView = findViewById(R.id.soundPathView);
     soundFolderPathView = findViewById(R.id.soundFolderPathView);
     
-    alarmPresetText1 = findViewById(R.id.alarmPresetText1);
-    alarmPresetText2 = findViewById(R.id.alarmPresetText2);
-    alarmPresetText3 = findViewById(R.id.alarmPresetText3);
-    alarmPresetText4 = findViewById(R.id.alarmPresetText4);
-    
-    
+    var volumeSliderIcon = findViewById(R.id.volumeSliderIcon);
+    var snoozeSliderIcon = findViewById(R.id.snoozeSliderIcon);
+
     // -- Config
     parentView.setOnFocusChangeListener((v, hasFocus) -> {
       if (hasFocus) hideSoftInput();
     });
-    
+
     hoursField.addTextChangedListener(new NumberTextWatcher(hoursField, Vars.HOUR_MIN, Vars.HOUR_MAX, true));
     hoursField.setImeOptions(EditorInfo.IME_ACTION_NEXT);
-    
+
     minutesField.addTextChangedListener(new NumberTextWatcher(minutesField, Vars.MINUTE_MIN, Vars.MINUTE_MAX, false));
     minutesField.setImeOptions(EditorInfo.IME_ACTION_NEXT);
-    
+
     soundSelector.setOnClickListener(v -> {
       updateInputState();
       selectSound();
     });
-    
+
+    volumeSliderIcon.setOnClickListener(v -> {
+      updateVolume(0, 0);
+    });
+
+    snoozeSliderIcon.setOnClickListener(v -> {
+      updateSnoozeTime(0);
+    });
+
     soundFolderSelector.setOnClickListener(v -> {
       updateInputState();
       selectSoundFolder();
@@ -267,20 +252,21 @@ public class MainActivity extends AppCompatActivity {
     
     panelAlarmState.setOnClickListener(v -> {
       hideSoftInput();
-      
+
       boolean alarmStarted = MainService.isAlarmStarted();
-      boolean snoozeOn = Fun.getSharedPrefBool(context, Vars.PREF_KEY_SNOOZE_ON);
+      int snoozeTime = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_SNOOZE_TIME);
+      boolean snoozeOn = snoozeTime > 0;
       if (!isAlarmWakeup || !snoozeOn) {
         updateAlarmState(!alarmStarted);
       }
-      
+
       if (!alarmStarted) {
         if (Vars.DEBUG_MODE || Vars.DEMO_MODE) {
           Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_STARTED, true);
           wakeupAlarm();
           return;
         }
-        
+
         Fun.logd("Starting Alarm");
         startAlarm();
         updateInputState();
@@ -290,53 +276,11 @@ public class MainActivity extends AppCompatActivity {
         stopAlarm();
       }
     });
-    
-    bSnooze.setOnClickListener(v -> {
-      boolean snoozeOn = Fun.getSharedPrefBool(context, Vars.PREF_KEY_SNOOZE_ON);
-      updateSnoozeState(!snoozeOn);
-    });
-    
-    OnClickListener alarmPresetClickListener = (v) -> {
-      TextView textView = (TextView) v;
-      String presetText = (String) textView.getText();
-      updateAlarmText(presetText);
-      Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_TEXT, presetText);
-      if (MainService.isAlarmStarted()) startAlarm();
-    };
-    
-    OnLongClickListener alarmPresetLongClickListener = (v) -> {
-      int id = v.getId();
-      TextView textView = findViewById(id);
-      
-      String clockText = getClockText();
-      textView.setText(clockText);
-      
-      String tag = (String) v.getTag();
-      Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_PRESET + tag, clockText);
-      
-      return true;
-    };
-    
-    alarmPresetText1.setOnClickListener(alarmPresetClickListener);
-    alarmPresetText2.setOnClickListener(alarmPresetClickListener);
-    alarmPresetText3.setOnClickListener(alarmPresetClickListener);
-    alarmPresetText4.setOnClickListener(alarmPresetClickListener);
-    
-    alarmPresetText1.setOnLongClickListener(alarmPresetLongClickListener);
-    alarmPresetText2.setOnLongClickListener(alarmPresetLongClickListener);
-    alarmPresetText3.setOnLongClickListener(alarmPresetLongClickListener);
-    alarmPresetText4.setOnLongClickListener(alarmPresetLongClickListener);
-    
-    alarmPresetText1.setTag(Vars.PREF_ALARM_PRESET_TAGS[0]);
-    alarmPresetText2.setTag(Vars.PREF_ALARM_PRESET_TAGS[1]);
-    alarmPresetText3.setTag(Vars.PREF_ALARM_PRESET_TAGS[2]);
-    alarmPresetText4.setTag(Vars.PREF_ALARM_PRESET_TAGS[3]);
-    
-    initVolumeSelector();
-    initSnoozeTimeSelector();
+
+    initVolumeSlider();
+    initSnoozeSlider();
   }
-  
-  
+
   private void restoreState() {
     try {
       String alarmText = Fun.getSharedPref(context, Vars.PREF_KEY_ALARM_TEXT);
@@ -354,26 +298,8 @@ public class MainActivity extends AppCompatActivity {
       if (Vars.DEMO_MODE) soundFolderPath = Vars.DEMO_SOUND_FOLDER_PATH;
       soundFolderPathView.setText(soundFolderPath);
       
-      updateSnoozeState(Fun.getSharedPrefBool(context, Vars.PREF_KEY_SNOOZE_ON));
       updateAlarmState(MainService.isAlarmStarted());
       
-      List<String> alarmPresets = new ArrayList<>();
-      for (String tag: Vars.PREF_ALARM_PRESET_TAGS) {
-        String alarmPresetText = Fun.getSharedPref(context, Vars.PREF_KEY_ALARM_PRESET + tag);
-        if (alarmPresetText == null) alarmPresetText = Vars.DEFAULT_ALARM_TEXT;
-        alarmPresets.add(alarmPresetText);
-      }
-      if (Vars.DEMO_MODE) {
-        alarmPresets.set(0, Vars.DEMO_PRESET_1);
-        alarmPresets.set(1, Vars.DEMO_PRESET_2);
-        alarmPresets.set(2, Vars.DEMO_PRESET_3);
-        alarmPresets.set(3, Vars.DEMO_PRESET_4);
-      }
-      
-      alarmPresetText1.setText(alarmPresets.get(0));
-      alarmPresetText2.setText(alarmPresets.get(1));
-      alarmPresetText3.setText(alarmPresets.get(2));
-      alarmPresetText4.setText(alarmPresets.get(3));
       
       updateOptionsState();
     }
@@ -382,75 +308,46 @@ public class MainActivity extends AppCompatActivity {
     }
   }
   
-  
-  // ------------------------------ Actions ------------------------------
-  private void initVolumeSelector() {
+  private void initVolumeSlider() {
     int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
     int curVolume = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_ALARM_VOLUME);
-    if (curVolume == -1) curVolume = Vars.DEFAULT_ALARM_VOLUME;
-    
-    List<String> items = new ArrayList<>();
-    for (int i = 0; i <= maxVolume; i++) {
-      items.add(String.valueOf(i));
-    }
-    VolumeListAdapter adapter = new VolumeListAdapter(this, items);
-    volumeSelector.setAdapter(adapter);
-    volumeSelector.setSelection(curVolume);
-    
-    volumeSelector.postDelayed(() -> {
-      volumeSelector.setOnItemSelectedListener(new OnItemSelectedListener() {
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-          Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_VOLUME, position);
-        }
-        public void onNothingSelected(AdapterView<?> parent) {}
-      });
-    }, 1000);
-  }
-  
-  private void initSnoozeTimeSelector() {
-    int listPos = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_SNOOZE_TIME_POS);
-    if (listPos == -1) {
-      listPos = 0;
-      Fun.saveSharedPref(context, Vars.PREF_KEY_SNOOZE_TIME, Vars.DEFAULT_SNOOZE_TIME);
-    }
-    
-    List<String> items = new ArrayList<String>() {{
-      add("3m");
-      add("5m");
-      add("10m");
-      add("15m");
-      add("20m");
-    }};
 
-    SnoozeTimeListAdapter adapter = new SnoozeTimeListAdapter(this, items);
-    snoozeTimeSelector.setAdapter(adapter);
-    snoozeTimeSelector.setSelection(listPos);
+    if (curVolume == -1) curVolume = Vars.DEFAULT_ALARM_VOLUME;
+    if (curVolume < 0) curVolume = 0;
+    if (curVolume > maxVolume) curVolume = maxVolume;
     
-    snoozeTimeSelector.postDelayed(() -> {
-      snoozeTimeSelector.setOnItemSelectedListener(new OnItemSelectedListener() {
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-          int snoozeTime = Vars.DEFAULT_SNOOZE_TIME;
-          try {
-            String item = (String) parent.getItemAtPosition(position);
-            snoozeTime = Integer.parseInt(item.replace("m", "")) * 60;
-          }
-          catch (Exception e) {
-            e.printStackTrace();
-          }
-          Fun.saveSharedPref(context, Vars.PREF_KEY_SNOOZE_TIME_POS, position);
-          Fun.saveSharedPref(context, Vars.PREF_KEY_SNOOZE_TIME, snoozeTime);
-        }
-        public void onNothingSelected(AdapterView<?> parent) {}
-      });
-    }, 1000);
+    volumeSlider.setMax(maxVolume);
+    updateVolume(curVolume, maxVolume);
+
+    volumeSlider.setProgressChangeListener(value -> {
+      updateVolume(value, maxVolume);
+    });
   }
-  
-  
+
+  private void initSnoozeSlider() {
+    int snoozeSeconds = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_SNOOZE_TIME);
+    if (snoozeSeconds == -1) snoozeSeconds = Vars.DEFAULT_SNOOZE_TIME;
+
+    boolean snoozeOn = Fun.getSharedPrefBool(context, Vars.PREF_KEY_SNOOZE_ON);
+    int snoozeMinutes = snoozeOn ? snoozeSeconds / 60 : 0;
+
+    if (snoozeMinutes < 0) snoozeMinutes = 0;
+    if (snoozeMinutes > 60) snoozeMinutes = 60;
+    
+    snoozeSlider.setMax(60);
+    updateSnoozeTime(snoozeMinutes);
+
+    snoozeSlider.setProgressChangeListener(value -> {
+      updateSnoozeTime(value);
+    });
+  }
+
+
   // ------------------------------ Main Engine ------------------------------
   private void startAlarm(long timeMillis) {
     this.isAlarmWakeup = false;
 
-    int alarmVolume = volumeSelector.getSelectedItemPosition();
+    int alarmVolume = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_ALARM_VOLUME);
     audioManager.setStreamVolume(AudioManager.STREAM_ALARM, alarmVolume, 0);
 
     MainService.startAlarm(timeMillis);
@@ -490,10 +387,9 @@ public class MainActivity extends AppCompatActivity {
     
     stopService(new Intent(this, PlayerService.class));
     
-    boolean snoozeOn = Fun.getSharedPrefBool(context, Vars.PREF_KEY_SNOOZE_ON);
+    int snoozeTime = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_SNOOZE_TIME);
+    boolean snoozeOn = snoozeTime > 0;
     if (snoozeOn && isAlarmWakeup) {
-      int snoozeTime = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_SNOOZE_TIME);
-      if (snoozeTime == -1) snoozeTime = Vars.DEFAULT_SNOOZE_TIME;
       if (Vars.DEBUG_MODE) snoozeTime = Vars.SNOOZE_TIME_DEBUG;
       snoozeAlarm(snoozeTime);
     }
@@ -588,12 +484,23 @@ public class MainActivity extends AppCompatActivity {
     panelAlarmState.setBackgroundResource(stateBackgroundId);
   }
   
-  private void updateSnoozeState(boolean enabled) {
-    int stateBackgroundId = enabled ? DRAWABLE_TOGGLE_BUTTON_BACKGROUND_ENABLED : DRAWABLE_TOGGLE_BUTTON_BACKGROUND_DISABLED;
-    bSnooze.setBackgroundResource(stateBackgroundId);
-    Fun.saveSharedPref(context, Vars.PREF_KEY_SNOOZE_ON, enabled);
+  private void updateVolume(int volume, int maxVolume) {
+    Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_VOLUME, volume);
+    volumeSlider.setProgress(volume);
+    
+    int percent = maxVolume == 0 ? 0 : Math.round((volume * 100f) / maxVolume);
+    volumeValueView.setText(percent + "%");
   }
   
+  private void updateSnoozeTime(int minutes) {
+    Fun.saveSharedPref(context, Vars.PREF_KEY_SNOOZE_TIME, minutes * 60);
+    Fun.saveSharedPref(context, Vars.PREF_KEY_SNOOZE_ON, minutes > 0);
+    
+    snoozeSlider.setProgress(minutes);
+    
+    snoozeValueView.setText(minutes > 0 ? String.valueOf(minutes) : "off");
+  }
+
   private void animateClock() {
     imageAlarmWakeupAnimation.setVisibility(View.VISIBLE);
     
@@ -637,8 +544,11 @@ public class MainActivity extends AppCompatActivity {
   private void playSound() {
     Fun.logd("playSound()");
     
+    long volume = Fun.getSharedPrefLong(context, Vars.PREF_KEY_ALARM_VOLUME);
+    if (volume <= 0) return;
+    
     Intent playerIntent = new Intent(this, PlayerService.class);
-    playerIntent.putExtra(Vars.EXTRA_AUDIO_VOLUME, volumeSelector.getSelectedItemPosition());
+    playerIntent.putExtra(Vars.EXTRA_AUDIO_VOLUME, volume);
     
     boolean useSoundFolder = isUseSoundFolder();
     if (useSoundFolder) {
@@ -653,7 +563,6 @@ public class MainActivity extends AppCompatActivity {
     
     startService(playerIntent);
   }
-  
   
   private void updateInputState() {
     InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -776,79 +685,6 @@ public class MainActivity extends AppCompatActivity {
     
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
     public void afterTextChanged(Editable s) {}
-  }
-  
-  
-  class VolumeListAdapter extends ArrayAdapter<String> {
-    private static final int ITEM_LAYOUT = R.layout.volume_list_item;
-    private static final int SPINNER_LAYOUT = R.layout.volume_list_view;
-    private Context context;
-    private List<String> items;
-
-    public VolumeListAdapter(Context context, List<String> items) {
-      super(context, ITEM_LAYOUT, items);
-      this.items = items;
-      this.context = context;
-    }
-
-    public View getView(int position, View convertView, ViewGroup parent) {
-      return createView(position, convertView, parent, SPINNER_LAYOUT, false);
-    }
-
-    public View getDropDownView(int position, View convertView, ViewGroup parent) {
-      return createView(position, convertView, parent, ITEM_LAYOUT, true);
-    }
-
-    private View createView(int position, View convertView, ViewGroup parent, int layoutId, boolean dropdownView) {
-      if (convertView == null) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        convertView = inflater.inflate(layoutId, parent, false);
-      }
-      
-      TextView itemText = convertView.findViewById(R.id.itemText);
-      String item = getItem(position);
-      if (item != null) {
-        itemText.setText(item);
-      }
-      
-      return convertView;
-    }
-  }
-  
-  class SnoozeTimeListAdapter extends ArrayAdapter<String> {
-    private static final int ITEM_LAYOUT = R.layout.snooze_time_list_item;
-    private static final int SPINNER_LAYOUT = R.layout.snooze_time_list_view;
-    private Context context;
-    private List<String> items;
-    
-    public SnoozeTimeListAdapter(Context context, List<String> items) {
-      super(context, ITEM_LAYOUT, items);
-      this.items = items;
-      this.context = context;
-    }
-
-    public View getView(int position, View convertView, ViewGroup parent) {
-      return createView(position, convertView, parent, SPINNER_LAYOUT, false);
-    }
-
-    public View getDropDownView(int position, View convertView, ViewGroup parent) {
-      return createView(position, convertView, parent, ITEM_LAYOUT, true);
-    }
-
-    private View createView(int position, View convertView, ViewGroup parent, int layoutId, boolean dropdownView) {
-      if (convertView == null) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        convertView = inflater.inflate(layoutId, parent, false);
-      }
-      
-      TextView itemText = convertView.findViewById(R.id.itemText);
-      String item = getItem(position);
-      if (item != null) {
-        itemText.setText(item);
-      }
-      
-      return convertView;
-    }
   }
   
   

@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">Plain Alarm</string>
-  <string name="action_settings">Settings</string>
   
   <string name="notification_channel_name">Plain Alarm</string>
   <string name="notification_channel_description"></string>
   
   <string name="ic_volume_up">@drawable/ic_volume_up_black_18dp</string>
   <string name="ic_folder">@drawable/ic_folder_black_18dp</string>
-  <string name="ic_equalizer">@drawable/ic_equalizer_black_24dp</string>
-  <string name="ic_snooze_large">@drawable/ic_snooze_black_36dp</string>
-  <string name="ic_snooze_small">@drawable/ic_snooze_black_24dp</string>
+  <string name="ic_snooze">@drawable/baseline_snooze_black_18</string>
 </resources>

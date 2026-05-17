@@ -1,116 +1,47 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/parentView"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:clickable="true"
-    android:focusable="true"
-    android:focusableInTouchMode="true"
-  >
+  xmlns:tools="http://schemas.android.com/tools"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/parentView"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:gravity="center_horizontal"
+  android:clickable="true"
+  android:focusable="true"
+  android:focusableInTouchMode="true">
 
   <LinearLayout
     android:id="@+id/topPanel"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingTop="@dimen/top_panel_margin_top"
-    android:paddingBottom="@dimen/top_panel_margin_top"
-    android:layout_alignParentTop="true"
-  >
+    android:gravity="center"
+    android:layout_alignParentTop="true">
+
     <LinearLayout
       android:id="@+id/clockPanel"
-      android:layout_width="0dp"
-      android:layout_height="match_parent"
-      android:layout_weight="1"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
       android:gravity="center"
-      android:orientation="horizontal"
-    >
+      android:orientation="horizontal">
+
       <EditText
         android:id="@+id/hoursField"
         android:text="00"
-        style="@style/ClockEditTextStyle"
-      />
-      
+        style="@style/ClockEditTextStyle" />
+
       <TextView
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        style="@style/ClockSeparatorTextStyle"
-      />
-      
+        style="@style/ClockSeparatorTextStyle" />
+
       <EditText
         android:id="@+id/minutesField"
         android:text="00"
-        style="@style/ClockEditTextStyle"
-      />
+        style="@style/ClockEditTextStyle" />
     </LinearLayout>
-    
-    <LinearLayout
-      android:id="@+id/alarmPresetsPanel"
-      android:layout_width="0dp"
-      android:layout_height="match_parent"
-      android:layout_weight="1"
-      android:gravity="center"
-      android:orientation="horizontal"
-    >
-        <LinearLayout
-          android:orientation="vertical"
-          android:layout_width="0dp"
-          android:layout_height="match_parent"
-          android:layout_weight="1"
-          android:gravity="center"
-          android:paddingRight="@dimen/alarm_preset_padding_right"
-        >
-          <TextView
-            android:id="@+id/alarmPresetText1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="right"
-            android:text="21:30"
-            style="@style/AlarmPresetTextStyle"
-          />
-          <TextView
-            android:id="@+id/alarmPresetText2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="right"
-            android:text="12:00"
-            style="@style/AlarmPresetTextStyle"
-          />
-        </LinearLayout>
-
-        <LinearLayout
-          android:orientation="vertical"
-          android:layout_width="0dp"
-          android:layout_height="match_parent"
-          android:layout_weight="1"
-          android:gravity="center"
-        >
-          <TextView
-            android:id="@+id/alarmPresetText3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="left"
-            android:text="09:00"
-            style="@style/AlarmPresetTextStyle"
-          />
-          <TextView
-            android:id="@+id/alarmPresetText4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="left"
-            android:text="07:15"
-            style="@style/AlarmPresetTextStyle"
-          />
-        </LinearLayout>
-    </LinearLayout>
-
   </LinearLayout>
-  
-  
+
   <LinearLayout
     android:id="@+id/soundSelector"
     android:layout_width="match_parent"
@@ -123,32 +54,28 @@
     android:paddingBottom="@dimen/selector_padding_top"
     android:paddingLeft="@dimen/selector_padding_left"
     android:paddingRight="@dimen/selector_padding_left"
-    android:background="@drawable/plain_pref_background_enabled"
-  >
+    android:background="@drawable/plain_pref_background_enabled">
+
     <ImageView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:src="@string/ic_volume_up"
-      android:tint="#777"
-    />
-    
+      android:src="@drawable/round_audiotrack_black_18"
+      android:tint="#777" />
+
     <View
       android:layout_width="1dp"
       android:layout_height="match_parent"
       android:layout_marginRight="@dimen/selector_text_divider_margin"
       android:layout_marginLeft="@dimen/selector_text_divider_margin"
-      android:background="#888"
-    />
-    
+      android:background="#888" />
+
     <TextView
       android:id="@+id/soundPathView"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:text="Default"
-      android:textSize="@dimen/selector_text_size"
-    />
+      android:textSize="@dimen/selector_text_size" />
   </LinearLayout>
-
 
   <LinearLayout
     android:id="@+id/soundFolderSelector"
@@ -162,122 +89,133 @@
     android:paddingBottom="@dimen/selector_padding_top"
     android:paddingLeft="@dimen/selector_padding_left"
     android:paddingRight="@dimen/selector_padding_left"
-    android:background="@drawable/plain_pref_background_disabled"
-  >
+    android:background="@drawable/plain_pref_background_disabled">
+
     <ImageView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:src="@string/ic_folder"
-      android:tint="#777"
-    />
-    
+      android:tint="#777" />
+
     <View
       android:layout_width="1dp"
       android:layout_height="match_parent"
       android:layout_marginRight="@dimen/selector_text_divider_margin"
       android:layout_marginLeft="@dimen/selector_text_divider_margin"
-      android:background="#888"
-    />
-    
+      android:background="#888" />
+
     <TextView
       android:id="@+id/soundFolderPathView"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:text="[Empty]"
-      android:textSize="@dimen/selector_text_size"
-    />
+      android:textSize="@dimen/selector_text_size" />
   </LinearLayout>
-  
 
   <LinearLayout
     android:id="@+id/settingsPanel"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/settings_panel_height"
-    android:orientation="horizontal"
-    android:gravity="center"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:layout_below="@+id/soundFolderSelector"
-    android:layout_marginLeft="@dimen/alarm_switcher_margin_left"
-    android:layout_marginRight="@dimen/alarm_switcher_margin_left"
   >
-    <LinearLayout
-      android:layout_width="0dp"
-      android:layout_height="match_parent"
-      android:layout_weight="1"
-      android:orientation="horizontal"
-      android:gravity="left"
-    >
-      <FrameLayout
-        android:layout_width="wrap_content"
+    <!-- VOLUME -->
+    <FrameLayout
+      android:layout_width="match_parent"
+      android:layout_height="60dp">
+
+      <org.mortalis.plainalarm.PlainSliderView
+        android:id="@+id/volumeSlider"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-      >
-        <Spinner
-          android:id="@+id/volumeSelector"
-          android:layout_width="@dimen/settings_button_width"
-          android:layout_height="match_parent"
-          android:background="@drawable/settings_spinner_background"
-          android:dropDownVerticalOffset="@dimen/settings_button_dropdown_offset"
-        />
-        
-        <ImageView
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:layout_gravity="left|center_vertical"
-          android:layout_marginLeft="@dimen/settings_button_1_image_margin"
-          android:src="@string/ic_equalizer"
-          android:tint="#666"
-        />
-      </FrameLayout>
-    </LinearLayout>
-    
-    <LinearLayout
-      android:layout_width="0dp"
-      android:layout_height="match_parent"
-      android:layout_weight="1"
-      android:orientation="horizontal"
-      android:gravity="center"
-    >
-      <ImageButton
-        android:id="@+id/bSnooze"
-        android:layout_width="@dimen/settings_button_width"
-        android:layout_height="match_parent"
-        android:src="@string/ic_snooze_large"
-        android:tint="#777"
-        android:background="@drawable/toggle_button_disabled"
+        app:progressColor="#b6cfbc"
+        app:progressMediumColor="#efca9a"
+        app:progressHighColor="#dbb1b1"
+        app:backgroundColor="@color/transparent"
       />
-    </LinearLayout>
-    
-    <LinearLayout
-      android:layout_width="0dp"
-      android:layout_height="match_parent"
-      android:layout_weight="1"
-      android:orientation="horizontal"
-      android:gravity="right"
-    >
-      <FrameLayout
-        android:layout_width="wrap_content"
+      
+      <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="horizontal"
       >
-        <Spinner
-          android:id="@+id/snoozeTimeSelector"
-          android:layout_width="@dimen/settings_button_width"
+        <ImageView
+          android:id="@+id/volumeSliderIcon"
+          android:layout_width="wrap_content"
           android:layout_height="match_parent"
-          android:background="@drawable/settings_spinner_background"
-          android:textSize="@dimen/settings_spinner_text_size"
-          android:dropDownVerticalOffset="@dimen/settings_button_dropdown_offset"
+          android:layout_gravity="left|center_vertical"
+          android:layout_marginLeft="6dp"
+          android:src="@string/ic_volume_up"
+          android:tint="#777"
+          android:clickable="true" />
+        
+        <View
+          android:layout_width="0dp"
+          android:layout_height="match_parent"
+          android:layout_weight="1"
         />
         
+        <TextView
+          android:id="@+id/volumeValueView"
+          android:layout_width="54dp"
+          android:layout_height="match_parent"
+          android:layout_marginRight="10dp"
+          android:gravity="right|center_vertical"
+          android:text="0%"
+          android:textColor="#777"
+          android:textSize="@dimen/slider_value_text_size"
+          android:textStyle="bold" />
+      </LinearLayout>
+    </FrameLayout>
+    
+    <!-- SNOOZE -->
+    <FrameLayout
+      android:layout_width="match_parent"
+      android:layout_height="40dp">
+
+      <org.mortalis.plainalarm.PlainSliderView
+        android:id="@+id/snoozeSlider"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:progressColor="#bce1d1"
+        app:backgroundColor="@color/transparent"
+      />
+      
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+      >
         <ImageView
+          android:id="@+id/snoozeSliderIcon"
           android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
+          android:layout_height="match_parent"
           android:layout_gravity="left|center_vertical"
-          android:layout_marginLeft="@dimen/settings_button_2_image_margin"
-          android:src="@string/ic_snooze_small"
-          android:tint="#666"
+          android:layout_marginLeft="6dp"
+          android:src="@string/ic_snooze"
+          android:tint="#777"
+          android:clickable="true" />
+        
+        <View
+          android:layout_width="0dp"
+          android:layout_height="match_parent"
+          android:layout_weight="1"
         />
-      </FrameLayout>
-    </LinearLayout>
+        
+        <TextView
+          android:id="@+id/snoozeValueView"
+          android:layout_width="54dp"
+          android:layout_height="match_parent"
+          android:layout_marginRight="10dp"
+          android:gravity="right|center_vertical"
+          android:text="0"
+          android:textColor="#777"
+          android:textSize="@dimen/slider_value_text_size"
+          android:textStyle="bold" />
+      </LinearLayout>
+    </FrameLayout>
   </LinearLayout>
-  
+  <!-- settingsPanel -->
 
   <LinearLayout
     android:layout_width="match_parent"
@@ -287,36 +225,33 @@
     android:layout_marginTop="@dimen/alarm_switcher_margin_top"
     android:layout_marginBottom="@dimen/alarm_switcher_margin_bottom"
     android:layout_marginLeft="@dimen/alarm_switcher_margin_left"
-    android:layout_marginRight="@dimen/alarm_switcher_margin_left"
-  >
+    android:layout_marginRight="@dimen/alarm_switcher_margin_left">
+
     <LinearLayout
       android:id="@+id/panelAlarmState"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
       android:orientation="horizontal"
-      android:gravity="center"
-    >
+      android:gravity="center">
+
       <ImageView
         android:id="@+id/imageAlarmWakeupAnimation"
         android:layout_width="@dimen/alarm_switcher_icon_size"
         android:layout_height="@dimen/alarm_switcher_icon_size"
         app:srcCompat="@drawable/avd_clock_alarm"
         android:tint="#f3f3f3"
-        android:visibility="gone"
-      />
+        android:visibility="gone" />
     </LinearLayout>
   </LinearLayout>
-  
-  
+
   <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center"
     android:focusable="true"
-    android:focusableInTouchMode="true"
-  >
-    <requestFocus/>
+    android:focusableInTouchMode="true">
+
+    <requestFocus />
   </LinearLayout>
-  
 </RelativeLayout>

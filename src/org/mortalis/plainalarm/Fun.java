@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import android.app.PendingIntent;
 import android.app.NotificationManager;
+import android.content.res.Resources;
 import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -19,6 +20,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 import android.os.PowerManager;
@@ -299,6 +301,12 @@ public class Fun {
     PowerManager.WakeLock wl = pm.newWakeLock(wl_flags, "ScreenWakeupTag");
     wl.acquire();
     wl.release();
+  }
+  
+  public static float dpToPx(float dp) {
+    DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+    float px = dp * ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+    return px;
   }
   
 }
