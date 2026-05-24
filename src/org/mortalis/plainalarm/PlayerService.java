@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.io.File;
 import java.util.List;
 import java.util.Collections;
 import java.util.Iterator;
@@ -19,9 +20,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
   
   private MediaPlayer mediaPlayer;
   
-  private boolean soundFromFolder;
   private String soundPath;
-  private String soundFolderPath;
   private int audioVolume;
   
   private Iterator<String> filesIter;
@@ -34,9 +33,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     Fun.logd("PlayerService.onStartCommand()");
     
     try {
-      soundFromFolder = intent.getBooleanExtra(Vars.EXTRA_SOUND_FROM_FOLDER, false);
       soundPath = intent.getStringExtra(Vars.EXTRA_SOUND_PATH);
-      soundFolderPath = intent.getStringExtra(Vars.EXTRA_SOUND_FOLDER_PATH);
       audioVolume = intent.getIntExtra(Vars.EXTRA_AUDIO_VOLUME, 0);
       
       if (mediaPlayer != null) mediaPlayer.release();
@@ -104,20 +101,22 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
   
   
   private void playSound() {
+    String audioPath = soundPath;
+    
     if (filesIter != null && !filesIter.hasNext()) {
       createFilesIterator();
     }
     
     if (filesIter != null) {
-      soundPath = filesIter.next();
-      Fun.logd("Random audio file: \"" + soundPath + "\"");
+      audioPath = filesIter.next();
+      Fun.logd("Random audio file: \"" + audioPath + "\"");
     }
     
-    MainService.showPlayerNotification(Fun.getBaseFileName(soundPath));
+    MainService.showPlayerNotification(Fun.getBaseFileName(audioPath));
     
     try {
-      if (soundPath != null && Fun.fileExists(soundPath)) {
-        mediaPlayer.setDataSource(soundPath);
+      if (audioPath != null && Fun.fileExists(audioPath)) {
+        mediaPlayer.setDataSource(audioPath);
       }
       else {
         mediaPlayer.setDataSource(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM));
@@ -131,13 +130,15 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
   }
   
   private void createFilesIterator() {
-    if (soundFolderPath != null) {
-      Fun.logd("Shuffling the audio files");
-      List<String> soundFiles = Fun.getSoundFiles(soundFolderPath);
-      if (soundFiles.size() > 0) {
-        Collections.shuffle(soundFiles);
-        filesIter = soundFiles.stream().iterator();
-      }
+    if (soundPath == null) return;
+    if (new File(soundPath).isFile()) return;
+    
+    Fun.logd("Shuffling the audio files");
+    List<String> soundFiles = Fun.getSoundFiles(soundPath);
+    
+    if (soundFiles.size() > 0) {
+      Collections.shuffle(soundFiles);
+      filesIter = soundFiles.stream().iterator();
     }
   }
   

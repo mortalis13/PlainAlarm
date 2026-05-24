@@ -2,10 +2,8 @@
 <resources>
   <color name="transparent">@android:color/transparent</color>
   
-  <color name="plain_pref_background_disabled">#ddd</color>
-  <color name="plain_pref_background_disabled_pressed">#ddd</color>
-  <color name="plain_pref_background_enabled">#f9dfb8</color>
-  <color name="plain_pref_background_enabled_pressed">#f9dfb8</color>
+  <color name="sound_selector_background">#f9dfb8</color>
+  <color name="sound_selector_background_pressed">#edd5b0</color>
   
   <color name="alarm_switcher_start_pressed">#8bb88f</color>
   <color name="alarm_switcher_start_default">#8bb88f</color>

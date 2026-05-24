@@ -22,15 +22,11 @@ public class Vars {
   public static final int APP_PERMISSION_REQUEST_CODE = 102;
   
   public static final String EXTRA_SOUND_PATH = "sound_path";
-  public static final String EXTRA_SOUND_FOLDER_PATH = "sound_folder_path";
-  public static final String EXTRA_SOUND_FROM_FOLDER = "sound_from_folder";
   public static final String EXTRA_AUDIO_VOLUME = "audio_volume";
   
   public static final String PREFS_FILE = "plain_alarm_prefs";
   
-  public static final String PREF_KEY_SOUND_FILE_PATH = "PREF_KEY_SOUND_FILE_PATH";
-  public static final String PREF_KEY_SOUND_FOLDER_PATH = "PREF_KEY_SOUND_FOLDER_PATH";
-  public static final String PREF_KEY_USE_SOUND_FOLDER = "PREF_KEY_USE_SOUND_FOLDER";
+  public static final String PREF_KEY_SOUND_PATH = "PREF_KEY_SOUND_PATH";
   public static final String PREF_KEY_ALARM_TEXT = "PREF_KEY_ALARM_TEXT";
   public static final String PREF_KEY_ALARM_STARTED = "PREF_KEY_ALARM_STARTED";
   public static final String PREF_KEY_ALARM_PRESET = "PREF_KEY_ALARM_PRESET";
@@ -73,11 +69,6 @@ public class Vars {
   
   public static final boolean DEMO_MODE = false;
   public static final String DEMO_TIME = "06:15";
-  public static final String DEMO_PRESET_1 = "09:15";
-  public static final String DEMO_PRESET_2 = "10:00";
-  public static final String DEMO_PRESET_3 = "12:30";
-  public static final String DEMO_PRESET_4 = "19:20";
-  public static final String DEMO_SOUND_PATH = "/storage/extSdCard/audio/rings/02. Ride The Lightning.mp3";
-  public static final String DEMO_SOUND_FOLDER_PATH = "/storage/extSdCard/audio/rings-2";
+  public static final String DEMO_SOUND_PATH = "/storage/extSdCard/audio/rings-2";
   
 }

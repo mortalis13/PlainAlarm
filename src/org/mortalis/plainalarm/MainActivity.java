@@ -3,8 +3,9 @@ package org.mortalis.plainalarm;
 import java.io.File;
 import java.util.Calendar;
 
-import org.home.file_chooser_lib.DirectoryPickerDialog;
+import org.home.file_chooser_lib.PickerDialog;
 import org.home.file_chooser_lib.FilePickerDialog;
+import org.home.file_chooser_lib.DirectoryPickerDialog;
 
 import android.os.Environment;
 import android.net.Uri;
@@ -47,16 +48,13 @@ import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
 
 public class MainActivity extends AppCompatActivity {
   
-  private static int DRAWABLE_PREF_BACKGROUND_ENABLED           = R.drawable.plain_pref_background_enabled;
-  private static int DRAWABLE_PREF_BACKGROUND_DISABLED          = R.drawable.plain_pref_background_disabled;
   private static int DRAWABLE_ALARM_PANEL_BACKGROUND_STOP       = R.drawable.alarm_switcher_background_stop;
   private static int DRAWABLE_ALARM_PANEL_BACKGROUND_START      = R.drawable.alarm_switcher_background_start;
   
   private boolean textWatcherEnabled = true;
   private boolean isAlarmWakeup;
   
-  private DirectoryPickerDialog dirPickerDialog;
-  private FilePickerDialog filePickerDialog;
+  private PickerDialog soundPickerDialog;
   
   private Context context;
   private AudioManager audioManager;
@@ -64,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
   private View parentView;
   
   private LinearLayout soundSelector;
-  private LinearLayout soundFolderSelector;
   
   private PlainSliderView volumeSlider;
   private PlainSliderView snoozeSlider;
@@ -77,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
   private ImageView imageAlarmWakeupAnimation;
   
   private TextView soundPathView;
-  private TextView soundFolderPathView;
   
   private EditText hoursField;
   private EditText minutesField;
@@ -178,19 +174,11 @@ public class MainActivity extends AppCompatActivity {
   private void init() {
     audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
     
-    filePickerDialog = new FilePickerDialog(context);
-    filePickerDialog.setExtensionFilter(Vars.AUDIO_EXTS);
-    filePickerDialog.setFileSelectedListener(file -> {
-      String path = file.getAbsolutePath();
-      Fun.saveSharedPref(context, Vars.PREF_KEY_SOUND_FILE_PATH, path);
-      soundPathView.setText(path);
-    });
-    
-    dirPickerDialog = new DirectoryPickerDialog(context, true);
-    dirPickerDialog.setFileSelectedListener(file -> {
+    soundPickerDialog = new PickerDialog(context, true, true);
+    soundPickerDialog.setFileSelectedListener(file -> {
       String path = file.getPath();
-      Fun.saveSharedPref(context, Vars.PREF_KEY_SOUND_FOLDER_PATH, path);
-      soundFolderPathView.setText(path);
+      Fun.saveSharedPref(context, Vars.PREF_KEY_SOUND_PATH, path);
+      soundPathView.setText(path);
     });
     
     Fun.storagePath = Environment.getExternalStorageDirectory().getPath();
@@ -203,7 +191,6 @@ public class MainActivity extends AppCompatActivity {
     minutesField = findViewById(R.id.minutesField);
 
     soundSelector = findViewById(R.id.soundSelector);
-    soundFolderSelector = findViewById(R.id.soundFolderSelector);
     
     volumeSlider = findViewById(R.id.volumeSlider);
     snoozeSlider = findViewById(R.id.snoozeSlider);
@@ -216,7 +203,6 @@ public class MainActivity extends AppCompatActivity {
     imageAlarmWakeupAnimation = findViewById(R.id.imageAlarmWakeupAnimation);
 
     soundPathView = findViewById(R.id.soundPathView);
-    soundFolderPathView = findViewById(R.id.soundFolderPathView);
     
     var volumeSliderIcon = findViewById(R.id.volumeSliderIcon);
     var snoozeSliderIcon = findViewById(R.id.snoozeSliderIcon);
@@ -232,11 +218,6 @@ public class MainActivity extends AppCompatActivity {
     minutesField.addTextChangedListener(new NumberTextWatcher(minutesField, Vars.MINUTE_MIN, Vars.MINUTE_MAX, false));
     minutesField.setImeOptions(EditorInfo.IME_ACTION_NEXT);
 
-    soundSelector.setOnClickListener(v -> {
-      updateInputState();
-      selectSound();
-    });
-
     volumeSliderIcon.setOnClickListener(v -> {
       updateVolume(0, 0);
     });
@@ -245,9 +226,9 @@ public class MainActivity extends AppCompatActivity {
       updateSnoozeTime(0);
     });
 
-    soundFolderSelector.setOnClickListener(v -> {
+    soundSelector.setOnClickListener(v -> {
       updateInputState();
-      selectSoundFolder();
+      selectSound();
     });
     
     panelAlarmState.setOnClickListener(v -> {
@@ -288,20 +269,12 @@ public class MainActivity extends AppCompatActivity {
       if (Vars.DEMO_MODE) alarmText = Vars.DEMO_TIME;
       updateAlarmText(alarmText);
       
-      String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_FILE_PATH);
+      String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_PATH);
       if (soundPath == null) soundPath = "";
       if (Vars.DEMO_MODE) soundPath = Vars.DEMO_SOUND_PATH;
       soundPathView.setText(soundPath);
       
-      String soundFolderPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_FOLDER_PATH);
-      if (soundFolderPath == null) soundFolderPath = "";
-      if (Vars.DEMO_MODE) soundFolderPath = Vars.DEMO_SOUND_FOLDER_PATH;
-      soundFolderPathView.setText(soundFolderPath);
-      
       updateAlarmState(MainService.isAlarmStarted());
-      
-      
-      updateOptionsState();
     }
     catch (Exception e) {
       e.printStackTrace();
@@ -414,39 +387,17 @@ public class MainActivity extends AppCompatActivity {
   private void selectSound() {
     Fun.logd("selectSound()");
     
-    boolean useSoundFolder = isUseSoundFolder();
-    if (useSoundFolder) {
-      unsetUseSoundFolderPref();
-      updateOptionsState();
-      return;
-    }
+    String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_PATH);
     
-    String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_FILE_PATH);
     String startPath = null;
     if (soundPath != null) {
-      startPath = Fun.getParentFolder(soundPath);
+      startPath = soundPath;
+      if (new File(startPath).isFile()) {
+        startPath = new File(startPath).getParent();
+      }
     }
     
-    filePickerDialog.showDialog(startPath);
-  }
-  
-  private void selectSoundFolder() {
-    Fun.logd("selectSoundFolder()");
-    
-    boolean useSoundFolder = isUseSoundFolder();
-    if (!useSoundFolder) {
-      setUseSoundFolderPref();
-      updateOptionsState();
-      return;
-    }
-    
-    String soundFolderPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_FOLDER_PATH);
-    String startPath = null;
-    if (soundFolderPath != null) {
-      startPath = soundFolderPath;
-    }
-    
-    dirPickerDialog.showDialog(startPath);
+    soundPickerDialog.showDialog(startPath);
   }
   
 
@@ -465,18 +416,6 @@ public class MainActivity extends AppCompatActivity {
     hoursField.setText(items[0]);
     minutesField.setText(items[1]);
     textWatcherEnabled = true;
-  }
-  
-  private void updateOptionsState() {
-    boolean useSoundFolder = isUseSoundFolder();
-    if (useSoundFolder) {
-      soundSelector.setBackgroundResource(DRAWABLE_PREF_BACKGROUND_DISABLED);
-      soundFolderSelector.setBackgroundResource(DRAWABLE_PREF_BACKGROUND_ENABLED);
-    }
-    else {
-      soundSelector.setBackgroundResource(DRAWABLE_PREF_BACKGROUND_ENABLED);
-      soundFolderSelector.setBackgroundResource(DRAWABLE_PREF_BACKGROUND_DISABLED);
-    }
   }
   
   private void updateAlarmState(boolean enabled) {
@@ -550,16 +489,8 @@ public class MainActivity extends AppCompatActivity {
     Intent playerIntent = new Intent(this, PlayerService.class);
     playerIntent.putExtra(Vars.EXTRA_AUDIO_VOLUME, volume);
     
-    boolean useSoundFolder = isUseSoundFolder();
-    if (useSoundFolder) {
-      String soundFolderPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_FOLDER_PATH);
-      playerIntent.putExtra(Vars.EXTRA_SOUND_FOLDER_PATH, soundFolderPath);
-      playerIntent.putExtra(Vars.EXTRA_SOUND_FROM_FOLDER, true);
-    }
-    else {
-      String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_FILE_PATH);
-      playerIntent.putExtra(Vars.EXTRA_SOUND_PATH, soundPath);
-    }
+    String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_PATH);
+    playerIntent.putExtra(Vars.EXTRA_SOUND_PATH, soundPath);
     
     startService(playerIntent);
   }
@@ -593,16 +524,6 @@ public class MainActivity extends AppCompatActivity {
     View v = getWindow().getDecorView().getRootView();
     if (inputMethodManager == null || v == null) return;
     inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
-  }
-  
-  private boolean isUseSoundFolder() {
-    return Fun.getSharedPrefBool(context, Vars.PREF_KEY_USE_SOUND_FOLDER);
-  }
-  private void setUseSoundFolderPref() {
-    Fun.saveSharedPref(context, Vars.PREF_KEY_USE_SOUND_FOLDER, true);
-  }
-  private void unsetUseSoundFolderPref() {
-    Fun.saveSharedPref(context, Vars.PREF_KEY_USE_SOUND_FOLDER, false);
   }
   
   
