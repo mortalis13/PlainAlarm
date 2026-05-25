@@ -121,6 +121,14 @@ public class Fun {
     return sharedPreferences.getBoolean(key, false);
   }
   
+  public static void removeSharedPref(Context context, String key) {
+    if (context == null) return;
+    SharedPreferences sharedPreferences = context.getSharedPreferences(Vars.PREFS_FILE, 0);
+    var editor = sharedPreferences.edit();
+    editor.remove(key);
+    editor.commit();
+  }
+  
   
   public static void toast(Context context, String msg) {
     if (context == null) return;

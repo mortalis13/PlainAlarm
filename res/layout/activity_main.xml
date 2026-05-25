@@ -26,7 +26,7 @@
 
       <EditText
         android:id="@+id/hoursField"
-        android:text="00"
+        android:gravity="right|center_vertical"
         style="@style/ClockEditTextStyle" />
 
       <TextView
@@ -37,7 +37,7 @@
 
       <EditText
         android:id="@+id/minutesField"
-        android:text="00"
+        android:gravity="left|center_vertical"
         style="@style/ClockEditTextStyle" />
     </LinearLayout>
   </LinearLayout>
@@ -68,7 +68,7 @@
       android:layout_height="match_parent"
       android:layout_marginLeft="6dp"
       android:gravity="center_vertical"
-      android:text="Default"
+      android:text="..."
       android:textSize="@dimen/selector_text_size" />
   </LinearLayout>
 
@@ -98,14 +98,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:paddingLeft="6dp"
-        android:paddingRight="10dp"
       >
         <ImageView
           android:id="@+id/volumeSliderIcon"
           android:layout_width="wrap_content"
           android:layout_height="match_parent"
-          android:layout_gravity="left|center_vertical"
+          android:gravity="left|center_vertical"
+          android:paddingLeft="6dp"
+          android:paddingRight="6dp"
           android:src="@string/ic_volume_up"
           android:tint="#777"
           android:clickable="true" />
@@ -121,6 +121,7 @@
           android:layout_width="54dp"
           android:layout_height="match_parent"
           android:gravity="right|center_vertical"
+          android:paddingRight="10dp"
           android:text="0%"
           android:textColor="#777"
           android:textSize="@dimen/slider_value_text_size"
@@ -145,14 +146,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:paddingLeft="6dp"
-        android:paddingRight="10dp"
       >
         <ImageView
           android:id="@+id/snoozeSliderIcon"
           android:layout_width="wrap_content"
           android:layout_height="match_parent"
-          android:layout_gravity="left|center_vertical"
+          android:gravity="left|center_vertical"
+          android:paddingLeft="6dp"
+          android:paddingRight="6dp"
           android:src="@string/ic_snooze"
           android:tint="#777"
           android:clickable="true" />
@@ -168,12 +169,14 @@
           android:layout_width="54dp"
           android:layout_height="match_parent"
           android:gravity="right|center_vertical"
+          android:paddingRight="10dp"
           android:text="0"
           android:textColor="#777"
           android:textSize="@dimen/slider_value_text_size"
           android:textStyle="bold" />
       </LinearLayout>
     </FrameLayout>
+    
   </LinearLayout>
   <!-- settingsPanel -->
 

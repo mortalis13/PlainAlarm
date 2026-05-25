@@ -231,6 +231,13 @@ public class MainActivity extends AppCompatActivity {
       selectSound();
     });
     
+    soundSelector.setOnLongClickListener(v -> {
+      updateInputState();
+      Fun.removeSharedPref(context, Vars.PREF_KEY_SOUND_PATH);
+      soundPathView.setText(Vars.DEFAULT_SOUND_PATH_LABEL);
+      return true;
+    });
+    
     panelAlarmState.setOnClickListener(v -> {
       hideSoftInput();
 
@@ -270,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
       updateAlarmText(alarmText);
       
       String soundPath = Fun.getSharedPref(context, Vars.PREF_KEY_SOUND_PATH);
-      if (soundPath == null) soundPath = "";
+      if (soundPath == null) soundPath = Vars.DEFAULT_SOUND_PATH_LABEL;
       if (Vars.DEMO_MODE) soundPath = Vars.DEMO_SOUND_PATH;
       soundPathView.setText(soundPath);
       

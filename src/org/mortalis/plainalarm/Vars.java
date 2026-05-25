@@ -18,6 +18,8 @@ public class Vars {
   public static final int NOTIFICATION_ID = 100;
   public static final String NOTIFICATIONS_CHANNEL_ID = "plainalarm_channel_id";
   
+  public static final String DEFAULT_SOUND_PATH_LABEL = "...";
+  
   public static final int APP_PERMISSION_REQUEST_ACCESS_EXTERNAL_STORAGE = 101;
   public static final int APP_PERMISSION_REQUEST_CODE = 102;
   
