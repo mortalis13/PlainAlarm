@@ -7,6 +7,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
@@ -24,7 +25,6 @@ public class TimeInput extends AppCompatEditText {
     void onComplete(TimeInput view, int value);
   }
 
-
   private Mode mode = Mode.MINUTES;
   private OnTwoDigitCompleteListener completeListener;
 
@@ -32,11 +32,17 @@ public class TimeInput extends AppCompatEditText {
   private int maxValue = 59;
 
   // Slot entry state
-  private boolean waitingSecondDigit = false;
-  private int firstDigit = 0;
+  private boolean waitingSecondDigit;
+  private int firstDigit;
 
   // Selection guard
-  private boolean enforcingSelection = false;
+  private boolean enforcingSelection;
+  
+  private boolean touchCancelled;
+  private int activePointerId = MotionEvent.INVALID_POINTER_ID;
+  private float downX;
+  private float downY;
+  private final int touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 
 
   public TimeInput(Context context) {
@@ -102,22 +108,71 @@ public class TimeInput extends AppCompatEditText {
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    if (event.getAction() == MotionEvent.ACTION_UP) {
-      if (hasFocus() && Fun.isKeyboardVisible(this)) {
-        Fun.hideKeyboard(this);
-        clearFocus();
+    int action = event.getActionMasked();
+    
+    if (action == MotionEvent.ACTION_DOWN) {
+      activePointerId = event.getPointerId(0);
+      downX = event.getX();
+      downY = event.getY();
+      touchCancelled = false;
+
+      setPressed(true);
+    }
+
+    if (action == MotionEvent.ACTION_MOVE) {
+      if (activePointerId == MotionEvent.INVALID_POINTER_ID) return true;
+
+      int pointerIndex = event.findPointerIndex(activePointerId);
+      if (pointerIndex < 0) return true;
+
+      float x = event.getX(pointerIndex);
+      float y = event.getY(pointerIndex);
+
+      // Cancel if user drags outside
+      boolean outside = !isPointInsideView(x, y);
+      boolean movedFar = Math.abs(x - downX) > touchSlop || Math.abs(y - downY) > touchSlop;
+
+      if (!touchCancelled && outside && movedFar) {
+        touchCancelled = true;
+        setPressed(false);
+        cancelLongPress();
       }
-      else {
-        requestFocus();
-        Fun.showKeyboard(this);
-        waitingSecondDigit = false;
-        selectAll();
+    }
+
+    if (action == MotionEvent.ACTION_UP) {
+      float x = event.getX();
+      float y = event.getY();
+
+      setPressed(false);
+
+      if (touchCancelled || !isPointInsideView(x, y)) {
+        activePointerId = MotionEvent.INVALID_POINTER_ID;
+        touchCancelled = false;
+        return true;
       }
       
-      performClick();
+      this.onClick();
+
+      activePointerId = MotionEvent.INVALID_POINTER_ID;
+      touchCancelled = false;
     }
 
     return true;
+  }
+  
+  private void onClick() {
+    if (hasFocus() && Fun.isKeyboardVisible(this)) {
+      Fun.hideKeyboard(this);
+      clearFocus();
+    }
+    else {
+      requestFocus();
+      Fun.showKeyboard(this);
+      waitingSecondDigit = false;
+      selectAll();
+    }
+    
+    performClick();
   }
 
   // IME-safe digit interception (soft keyboards call commitText, not onKeyDown)
@@ -259,6 +314,10 @@ public class TimeInput extends AppCompatEditText {
       return keyCode - KeyEvent.KEYCODE_NUMPAD_0;
     }
     return -1;
+  }
+  
+  private boolean isPointInsideView(float x, float y) {
+    return x >= 0 && x < getWidth() && y >= 0 && y < getHeight();
   }
   
 }
