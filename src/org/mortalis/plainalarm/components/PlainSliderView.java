@@ -1,4 +1,4 @@
-package org.mortalis.plainalarm;
+package org.mortalis.plainalarm.components;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -10,6 +10,9 @@ import android.view.View;
 import android.content.res.TypedArray;
 
 import com.google.android.material.color.MaterialColors;
+
+import org.mortalis.plainalarm.Fun;
+import org.mortalis.plainalarm.R;
 
 
 public class PlainSliderView extends View {

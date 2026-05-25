@@ -47,12 +47,6 @@ public class Vars {
   
   public static final String DEFAULT_ALARM_TEXT = "00:00";
   
-  public static final int HOUR_MIN = 0;
-  public static final int HOUR_MAX = 23;
-  public static final int MINUTE_MIN = 0;
-  public static final int MINUTE_MAX = 59;
-  public static final char[] TIME_CHARS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-  
   public static int DEFAULT_ALARM_VOLUME = 2;
   public static int DEFAULT_SNOOZE_TIME = 180;
   
@@ -65,9 +59,6 @@ public class Vars {
     "mid",
     "3gp"
   };
-  
-  
-  // ---
   
   public static final boolean DEMO_MODE = false;
   public static final String DEMO_TIME = "06:15";

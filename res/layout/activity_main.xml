@@ -24,8 +24,11 @@
       android:gravity="center"
       android:orientation="horizontal">
 
-      <EditText
+      <org.mortalis.plainalarm.components.TimeInput
         android:id="@+id/hoursField"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:gravity="right|center_vertical"
         style="@style/ClockEditTextStyle" />
 
@@ -35,8 +38,11 @@
         android:layout_gravity="center_vertical"
         style="@style/ClockSeparatorTextStyle" />
 
-      <EditText
+      <org.mortalis.plainalarm.components.TimeInput
         android:id="@+id/minutesField"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:gravity="left|center_vertical"
         style="@style/ClockEditTextStyle" />
     </LinearLayout>
@@ -84,7 +90,7 @@
       android:layout_width="match_parent"
       android:layout_height="60dp">
 
-      <org.mortalis.plainalarm.PlainSliderView
+      <org.mortalis.plainalarm.components.PlainSliderView
         android:id="@+id/volumeSlider"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -134,7 +140,7 @@
       android:layout_width="match_parent"
       android:layout_height="40dp">
 
-      <org.mortalis.plainalarm.PlainSliderView
+      <org.mortalis.plainalarm.components.PlainSliderView
         android:id="@+id/snoozeSlider"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

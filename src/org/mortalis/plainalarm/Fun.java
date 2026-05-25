@@ -24,10 +24,14 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 import android.os.PowerManager;
+import android.view.inputmethod.InputMethodManager;
+import android.view.View;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 
 public class Fun {
@@ -73,7 +77,6 @@ public class Fun {
     
     return result;
   }
-  
   
   public static int getRandomInt(int from, int to) {
     return from + new Random().nextInt(to - from + 1);
@@ -129,12 +132,10 @@ public class Fun {
     editor.commit();
   }
   
-  
   public static void toast(Context context, String msg) {
     if (context == null) return;
     Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
   }
-  
   
   private static void log_file(String msg) {
     File dir = new File(storagePath);
@@ -186,7 +187,6 @@ public class Fun {
     }
   }
   
-  
   public static void log(String format, Object... values) {
     try {
       log(String.format(format, values));
@@ -232,7 +232,6 @@ public class Fun {
   public static void loge(Object value) {
     log(value, Vars.LogLevel.ERROR);
   }
-  
   
   private static String getCallerLogInfo() {
     String result = "";
@@ -301,6 +300,25 @@ public class Fun {
   public static void cancelNotification(Context context, int id) {
     NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     notificationManager.cancel(id);
+  }
+  
+  public static void showKeyboard(View view) {
+    InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+    if (imm != null) {
+      imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+    }
+  }
+  
+  public static void hideKeyboard(View view) {
+    InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+    if (imm != null) {
+      imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+  }
+  
+  public static boolean isKeyboardVisible(View view) {
+    WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(view);
+    return insets != null && insets.isVisible(WindowInsetsCompat.Type.ime());
   }
   
   public static void screenWakeup(Context context) {

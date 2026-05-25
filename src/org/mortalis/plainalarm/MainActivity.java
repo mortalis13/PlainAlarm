@@ -25,7 +25,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.graphics.drawable.Animatable;
 import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -45,13 +44,15 @@ import androidx.core.content.ContextCompat;
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat.AnimationCallback;
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
 
+import org.mortalis.plainalarm.components.PlainSliderView;
+import org.mortalis.plainalarm.components.TimeInput;
+
 
 public class MainActivity extends AppCompatActivity {
   
-  private static int DRAWABLE_ALARM_PANEL_BACKGROUND_STOP       = R.drawable.alarm_switcher_background_stop;
-  private static int DRAWABLE_ALARM_PANEL_BACKGROUND_START      = R.drawable.alarm_switcher_background_start;
+  private static int DRAWABLE_ALARM_PANEL_BACKGROUND_STOP = R.drawable.alarm_switcher_background_stop;
+  private static int DRAWABLE_ALARM_PANEL_BACKGROUND_START = R.drawable.alarm_switcher_background_start;
   
-  private boolean textWatcherEnabled = true;
   private boolean isAlarmWakeup;
   
   private PickerDialog soundPickerDialog;
@@ -75,8 +76,8 @@ public class MainActivity extends AppCompatActivity {
   
   private TextView soundPathView;
   
-  private EditText hoursField;
-  private EditText minutesField;
+  private TimeInput hoursField;
+  private TimeInput minutesField;
   
   private Animatable alarmWakeupAnimation;
   
@@ -209,15 +210,29 @@ public class MainActivity extends AppCompatActivity {
 
     // -- Config
     parentView.setOnFocusChangeListener((v, hasFocus) -> {
-      if (hasFocus) hideSoftInput();
+      if (hasFocus) Fun.hideKeyboard(v);
     });
 
-    hoursField.addTextChangedListener(new NumberTextWatcher(hoursField, Vars.HOUR_MIN, Vars.HOUR_MAX, true));
-    hoursField.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+    hoursField.setMode(TimeInput.Mode.HOURS);
+    minutesField.setMode(TimeInput.Mode.MINUTES);
 
-    minutesField.addTextChangedListener(new NumberTextWatcher(minutesField, Vars.MINUTE_MIN, Vars.MINUTE_MAX, false));
-    minutesField.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+    hoursField.setRange(0, 23);
+    minutesField.setRange(0, 59);
+    
+    hoursField.setOnTwoDigitCompleteListener((view, value) -> {
+      if (MainService.isAlarmStarted()) startAlarm();
+      Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_TEXT, getClockText());
 
+      View nextView = hoursField.focusSearch(View.FOCUS_FORWARD);
+      if (nextView != null) nextView.post(nextView::requestFocus);
+    });
+
+    minutesField.setOnTwoDigitCompleteListener((view, value) -> {
+      if (MainService.isAlarmStarted()) startAlarm();
+      Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_TEXT, getClockText());
+      unfocusTimeInput();
+    });
+    
     volumeSliderIcon.setOnClickListener(v -> {
       updateVolume(0, 0);
     });
@@ -227,19 +242,19 @@ public class MainActivity extends AppCompatActivity {
     });
 
     soundSelector.setOnClickListener(v -> {
-      updateInputState();
+      unfocusTimeInput();
       selectSound();
     });
     
     soundSelector.setOnLongClickListener(v -> {
-      updateInputState();
+      unfocusTimeInput();
       Fun.removeSharedPref(context, Vars.PREF_KEY_SOUND_PATH);
       soundPathView.setText(Vars.DEFAULT_SOUND_PATH_LABEL);
       return true;
     });
     
     panelAlarmState.setOnClickListener(v -> {
-      hideSoftInput();
+      unfocusTimeInput();
 
       boolean alarmStarted = MainService.isAlarmStarted();
       int snoozeTime = (int) Fun.getSharedPrefLong(context, Vars.PREF_KEY_SNOOZE_TIME);
@@ -257,7 +272,6 @@ public class MainActivity extends AppCompatActivity {
 
         Fun.logd("Starting Alarm");
         startAlarm();
-        updateInputState();
       }
       else {
         Fun.logd("Stopping Alarm");
@@ -322,8 +336,8 @@ public class MainActivity extends AppCompatActivity {
     });
   }
 
+  // ------------------ Main Engine ------------------
 
-  // ------------------------------ Main Engine ------------------------------
   private void startAlarm(long timeMillis) {
     this.isAlarmWakeup = false;
 
@@ -389,8 +403,8 @@ public class MainActivity extends AppCompatActivity {
     enableScreenOn();
   }
   
+  // ------------------ UI Actions ------------------
   
-  // ---------------------------------------- UI Actions -------------------
   private void selectSound() {
     Fun.logd("selectSound()");
     
@@ -407,8 +421,8 @@ public class MainActivity extends AppCompatActivity {
     soundPickerDialog.showDialog(startPath);
   }
   
+  // ------------------ UI Utils ------------------
 
-  // --------------------------------------- UI Utils --------------------
   private void enableScreenOn() {
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
   }
@@ -418,11 +432,9 @@ public class MainActivity extends AppCompatActivity {
   }
   
   private void updateAlarmText(String text) {
-    textWatcherEnabled = false;
     String[] items = text.split(":");
     hoursField.setText(items[0]);
     minutesField.setText(items[1]);
-    textWatcherEnabled = true;
   }
   
   private void updateAlarmState(boolean enabled) {
@@ -484,8 +496,7 @@ public class MainActivity extends AppCompatActivity {
     return result;
   }
   
-  
-  // --------------------------------------- Utils --------------------
+  // ------------------ Utils ------------------
   
   private void playSound() {
     Fun.logd("playSound()");
@@ -502,37 +513,13 @@ public class MainActivity extends AppCompatActivity {
     startService(playerIntent);
   }
   
-  private void updateInputState() {
-    InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-    if (inputMethodManager != null) {
-      if (inputMethodManager.isActive(hoursField)) {
-        hoursField.clearFocus();
-      }
-      else if (inputMethodManager.isActive(minutesField)) {
-        minutesField.clearFocus();
-      }
-      
-      // inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
-      View v = getWindow().getDecorView().getRootView();
-      if (v != null) inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
-    }
+  private void unfocusTimeInput() {
+    hoursField.clearFocus();
+    minutesField.clearFocus();
+    
+    if (Fun.isKeyboardVisible(hoursField)) Fun.hideKeyboard(hoursField);
+    if (Fun.isKeyboardVisible(minutesField)) Fun.hideKeyboard(minutesField);
   }
-  
-  private void showSoftInput(View view) {
-    InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-    if (inputMethodManager != null) {
-      view.requestFocus();
-      inputMethodManager.showSoftInput(view, 0);
-    }
-  }
-  
-  private void hideSoftInput() {
-    InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-    View v = getWindow().getDecorView().getRootView();
-    if (inputMethodManager == null || v == null) return;
-    inputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
-  }
-  
   
   private void createNotificationChannel() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -547,74 +534,6 @@ public class MainActivity extends AppCompatActivity {
       notificationManager.createNotificationChannel(channel);
     }
   }
-
-  
-  // ---------------------------------------- Classes -------------------
-  class NumberTextWatcher implements TextWatcher {
-    private int minValue;
-    private int maxValue;
-    
-    private boolean focusNext;
-    private String prevText;
-    
-    private EditText editText;
-    
-    public NumberTextWatcher(EditText editText, int minValue, int maxValue, boolean focusNext) {
-      this.editText = editText;
-      this.minValue = minValue;
-      this.maxValue = maxValue;
-      this.focusNext = focusNext;
-    }
-    
-    public void onInputFinished() {
-      if (MainService.isAlarmStarted()) startAlarm();
-      Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_TEXT, getClockText());
-      
-      final View nextView = hoursField.focusSearch(View.FOCUS_FORWARD);
-      if (focusNext && nextView != null) {
-        // delay defore focusing (otherwise triggers textChanged() for the focused field)
-        nextView.post(() -> nextView.requestFocus());
-      }
-      else {
-        updateInputState();
-      }
-    }
-    
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-      if (!textWatcherEnabled) return;
-      String str = s.toString();
-      
-      if (str.isEmpty()) {
-        editText.setText("00");
-        return;
-      }
-      
-      int value = 0;
-      try {
-        value = Integer.parseInt(str);
-      }
-      catch (NumberFormatException e) {
-        editText.setText("00");
-        return;
-      }
-      
-      if (value > maxValue / 10)  {
-        if (value > maxValue) value = value / 10;
-        String normText = String.format("%02d", value);
-        if (!str.equals(normText)) {
-          editText.setText(normText);
-        }
-      }
-      
-      if (str.length() == 2) {
-        onInputFinished();
-      }
-    }
-    
-    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-    public void afterTextChanged(Editable s) {}
-  }
-  
   
   // --------------------
   @Override
