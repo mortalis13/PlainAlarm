@@ -50,8 +50,8 @@ import org.mortalis.plainalarm.components.TimeInput;
 
 public class MainActivity extends AppCompatActivity {
   
-  private static int DRAWABLE_ALARM_PANEL_BACKGROUND_STOP = R.drawable.alarm_switcher_background_stop;
-  private static int DRAWABLE_ALARM_PANEL_BACKGROUND_START = R.drawable.alarm_switcher_background_start;
+  private static final int DRAWABLE_ALARM_PANEL_BACKGROUND_STOP = R.drawable.alarm_switcher_background_stop;
+  private static final int DRAWABLE_ALARM_PANEL_BACKGROUND_START = R.drawable.alarm_switcher_background_start;
   
   private boolean isAlarmWakeup;
   
@@ -219,18 +219,22 @@ public class MainActivity extends AppCompatActivity {
     hoursField.setRange(0, 23);
     minutesField.setRange(0, 59);
     
-    hoursField.setOnTwoDigitCompleteListener((view, value) -> {
+    hoursField.setOnUpdateListener((value, isCompleted) -> {
       if (MainService.isAlarmStarted()) startAlarm();
       Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_TEXT, getClockText());
 
-      View nextView = hoursField.focusSearch(View.FOCUS_FORWARD);
-      if (nextView != null) nextView.post(nextView::requestFocus);
+      if (isCompleted) {
+        View nextView = hoursField.focusSearch(View.FOCUS_FORWARD);
+        if (nextView != null) nextView.post(nextView::requestFocus);
+      }
     });
 
-    minutesField.setOnTwoDigitCompleteListener((view, value) -> {
+    minutesField.setOnUpdateListener((value, isCompleted) -> {
       if (MainService.isAlarmStarted()) startAlarm();
       Fun.saveSharedPref(context, Vars.PREF_KEY_ALARM_TEXT, getClockText());
-      unfocusTimeInput();
+      if (isCompleted) {
+        unfocusTimeInput();
+      }
     });
     
     volumeSliderIcon.setOnClickListener(v -> {

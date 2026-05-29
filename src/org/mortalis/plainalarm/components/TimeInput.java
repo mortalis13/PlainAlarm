@@ -2,6 +2,8 @@ package org.mortalis.plainalarm.components;
 
 import android.content.Context;
 import android.text.InputType;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -18,18 +20,25 @@ import org.mortalis.plainalarm.Fun;
 
 
 public class TimeInput extends AppCompatEditText {
+  
+  public static final float STEP_SIZE = Fun.dpToPx(20);
 
   public enum Mode { HOURS, MINUTES }
 
-  public interface OnTwoDigitCompleteListener {
-    void onComplete(TimeInput view, int value);
+  public interface OnUpdateListener {
+    void onUpdate(int value, boolean isComplete);
   }
 
   private Mode mode = Mode.MINUTES;
-  private OnTwoDigitCompleteListener completeListener;
+  
+  private OnUpdateListener updateListener;
+  
+  private int value;
 
   private int minValue = 0;
   private int maxValue = 59;
+  
+  private int currentStep;
 
   // Slot entry state
   private boolean waitingSecondDigit;
@@ -39,9 +48,12 @@ public class TimeInput extends AppCompatEditText {
   private boolean enforcingSelection;
   
   private boolean touchCancelled;
-  private int activePointerId = MotionEvent.INVALID_POINTER_ID;
+  private boolean valueChanged;
+  
   private float downX;
   private float downY;
+  
+  private int activePointerId = MotionEvent.INVALID_POINTER_ID;
   private final int touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 
 
@@ -89,8 +101,24 @@ public class TimeInput extends AppCompatEditText {
     });
 
     if (getText() == null || getText().length() == 0) {
-      setTwoDigitText(0);
+      formatValue(0);
     }
+    
+    addTextChangedListener(new TextWatcher() {
+      @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+      @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        try {
+          value = Integer.parseInt(s.toString());
+        }
+        catch (NumberFormatException e) {
+          value = 0;
+        }
+        onValueUpdated(value);
+      }
+    });
   }
   
   public void setRange(int min, int max) {
@@ -101,9 +129,9 @@ public class TimeInput extends AppCompatEditText {
   public void setMode(Mode mode) {
     this.mode = mode;
   }
-
-  public void setOnTwoDigitCompleteListener(OnTwoDigitCompleteListener listener) {
-    this.completeListener = listener;
+  
+  public void setOnUpdateListener(OnUpdateListener listener) {
+    this.updateListener = listener;
   }
 
   @Override
@@ -111,11 +139,15 @@ public class TimeInput extends AppCompatEditText {
     int action = event.getActionMasked();
     
     if (action == MotionEvent.ACTION_DOWN) {
-      activePointerId = event.getPointerId(0);
-      downX = event.getX();
-      downY = event.getY();
+      this.currentStep = 0;
+      
       touchCancelled = false;
-
+      valueChanged = false;
+      
+      activePointerId = event.getPointerId(0);
+      this.downX = event.getX();
+      this.downY = event.getY();
+      
       setPressed(true);
     }
 
@@ -130,16 +162,33 @@ public class TimeInput extends AppCompatEditText {
 
       // Cancel if user drags outside
       boolean outside = !isPointInsideView(x, y);
-      boolean movedFar = Math.abs(x - downX) > touchSlop || Math.abs(y - downY) > touchSlop;
+      boolean movedFar = Math.abs(x - this.downX) > touchSlop || Math.abs(y - this.downY) > touchSlop;
 
       if (!touchCancelled && outside && movedFar) {
         touchCancelled = true;
         setPressed(false);
         cancelLongPress();
       }
+      
+      float yOffset = y - this.downY;
+      int step = (int) (yOffset / STEP_SIZE);
+      
+      if (yOffset != 0 && this.currentStep != step) {
+        int delta = step - this.currentStep;
+        
+        int newValue = value - delta;
+        if (newValue < 0) newValue = this.maxValue;
+        if (newValue > this.maxValue) newValue = this.minValue;
+
+        setValue(newValue);
+        this.currentStep = step;
+        this.valueChanged = true;
+      }
     }
 
     if (action == MotionEvent.ACTION_UP) {
+      this.currentStep = 0;
+      
       float x = event.getX();
       float y = event.getY();
 
@@ -151,30 +200,18 @@ public class TimeInput extends AppCompatEditText {
         return true;
       }
       
-      this.onClick();
+      if (!this.valueChanged) {
+        this.onClick();
+      }
 
       activePointerId = MotionEvent.INVALID_POINTER_ID;
       touchCancelled = false;
+      valueChanged = false;
     }
 
     return true;
   }
   
-  private void onClick() {
-    if (hasFocus() && Fun.isKeyboardVisible(this)) {
-      Fun.hideKeyboard(this);
-      clearFocus();
-    }
-    else {
-      requestFocus();
-      Fun.showKeyboard(this);
-      waitingSecondDigit = false;
-      selectAll();
-    }
-    
-    performClick();
-  }
-
   // IME-safe digit interception (soft keyboards call commitText, not onKeyDown)
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
@@ -238,6 +275,27 @@ public class TimeInput extends AppCompatEditText {
     super.clearFocus();
   }
   
+  private void onClick() {
+    if (hasFocus() && Fun.isKeyboardVisible(this)) {
+      Fun.hideKeyboard(this);
+      clearFocus();
+    }
+    else {
+      requestFocus();
+      Fun.showKeyboard(this);
+      waitingSecondDigit = false;
+      selectAll();
+    }
+    
+    performClick();
+  }
+  
+  private void setValue(int value) {
+    this.value = value;
+    formatValue(value);
+    onValueUpdated(value);
+  }
+  
   private void resetSlotState() {
     waitingSecondDigit = false;
     firstDigit = 0;
@@ -245,14 +303,16 @@ public class TimeInput extends AppCompatEditText {
 
   private void handleBackspace() {
     waitingSecondDigit = false;
-    setTwoDigitText(0);
+    formatValue(0);
+    selectAll();
   }
 
   private void handleDigit(int digit) {
     // HOURS rule: first digit 3..9 => 03..09 and COMPLETE (jump)
     if (mode == Mode.HOURS && !waitingSecondDigit && digit > 2) {
       waitingSecondDigit = false;
-      setTwoDigitText(digit);
+      formatValue(digit);
+      selectAll();
       fireComplete(digit);
       return;
     }
@@ -268,7 +328,8 @@ public class TimeInput extends AppCompatEditText {
 
       firstDigit = digit;
       waitingSecondDigit = true;
-      setTwoDigitText(tensValue);
+      formatValue(tensValue);
+      selectAll();
       return;
     }
 
@@ -279,7 +340,8 @@ public class TimeInput extends AppCompatEditText {
     if (mode == Mode.HOURS && candidate > maxValue) {
       int forced = firstDigit; // 2 => 02
       waitingSecondDigit = false;
-      setTwoDigitText(forced);
+      formatValue(forced);
+      selectAll();
       fireComplete(forced);
       return;
     }
@@ -290,20 +352,26 @@ public class TimeInput extends AppCompatEditText {
     }
 
     waitingSecondDigit = false;
-    setTwoDigitText(candidate);
+    formatValue(candidate);
+    selectAll();
     fireComplete(candidate);
   }
 
   private void fireComplete(int value) {
-    if (completeListener != null) {
-      completeListener.onComplete(this, value);
+    if (updateListener != null) {
+      updateListener.onUpdate(value, true);
     }
   }
 
-  private void setTwoDigitText(int value) {
+  private void onValueUpdated(int value) {
+    if (updateListener != null) {
+      updateListener.onUpdate(value, false);
+    }
+  }
+
+  private void formatValue(int value) {
     String text = String.format("%02d", value);
     setText(text);
-    selectAll();
   }
 
   private int keyCodeToDigit(int keyCode) {
