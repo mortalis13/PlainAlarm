@@ -13,6 +13,7 @@ import android.view.ViewConfiguration;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
+import android.view.VelocityTracker;
 
 import androidx.appcompat.widget.AppCompatEditText;
 
@@ -22,14 +23,20 @@ import org.mortalis.plainalarm.Fun;
 public class TimeInput extends AppCompatEditText {
   
   public static final float STEP_SIZE = Fun.dpToPx(20);
+  private static final int SWIPE_JUMP = 10;
+  
+  private static final float SWIPE_MIN_DISTANCE = Fun.dpToPx(40);
+  private static final float SWIPE_MIN_VELOCITY = 3000f;
 
   public enum Mode { HOURS, MINUTES }
+  private enum GestureMode { NONE, DRAG, SWIPE }
 
   public interface OnUpdateListener {
     void onUpdate(int value, boolean isComplete);
   }
 
   private Mode mode = Mode.MINUTES;
+  private GestureMode gestureMode = GestureMode.NONE;
   
   private OnUpdateListener updateListener;
   
@@ -55,6 +62,8 @@ public class TimeInput extends AppCompatEditText {
   
   private int activePointerId = MotionEvent.INVALID_POINTER_ID;
   private final int touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+  
+  private VelocityTracker velocityTracker;
 
 
   public TimeInput(Context context) {
@@ -137,17 +146,24 @@ public class TimeInput extends AppCompatEditText {
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     int action = event.getActionMasked();
-    
+
+    if (velocityTracker == null) {
+      velocityTracker = VelocityTracker.obtain();
+    }
+    velocityTracker.addMovement(event);
+
     if (action == MotionEvent.ACTION_DOWN) {
       this.currentStep = 0;
-      
+
       touchCancelled = false;
       valueChanged = false;
-      
+
+      gestureMode = (this.mode == Mode.HOURS) ? GestureMode.DRAG : GestureMode.NONE;
+
       activePointerId = event.getPointerId(0);
       this.downX = event.getX();
       this.downY = event.getY();
-      
+
       setPressed(true);
     }
 
@@ -163,53 +179,100 @@ public class TimeInput extends AppCompatEditText {
       // Cancel if user drags outside
       boolean outside = !isPointInsideView(x, y);
       boolean movedFar = Math.abs(x - this.downX) > touchSlop || Math.abs(y - this.downY) > touchSlop;
-
       if (!touchCancelled && outside && movedFar) {
         touchCancelled = true;
         setPressed(false);
         cancelLongPress();
       }
+
+      float dx = x - this.downX;
+      float dy = y - this.downY;
+
+      // If already recognized as swipe, ignore drag stepping
+      if (gestureMode == GestureMode.SWIPE) {
+        return true;
+      }
+
+      // Detect mostly-vertical fast movement as swipe candidate
+      velocityTracker.computeCurrentVelocity(1000);
+      float vx = velocityTracker.getXVelocity(activePointerId);
+      float vy = velocityTracker.getYVelocity(activePointerId);
+
+      boolean verticalEnough = Math.abs(dy) > Math.abs(dx) * 1.5f;
+      boolean fastEnough = Math.abs(vy) >= SWIPE_MIN_VELOCITY;
+      boolean farEnough = Math.abs(dy) >= SWIPE_MIN_DISTANCE;
       
-      float yOffset = y - this.downY;
-      int step = (int) (yOffset / STEP_SIZE);
-      
-      if (yOffset != 0 && this.currentStep != step) {
+      if (gestureMode == GestureMode.NONE && verticalEnough && fastEnough && farEnough) {
+        gestureMode = GestureMode.SWIPE;
+        applyJump(SWIPE_JUMP);
+
+        setPressed(false);
+        return true;
+      }
+
+      int step = (int) (dy / STEP_SIZE);
+
+      if (dy != 0 && this.currentStep != step) {
+        if (Math.abs(this.currentStep) > 0) {
+          // At least one step was processed, discard swipe
+          gestureMode = GestureMode.DRAG;
+        }
+
         int delta = step - this.currentStep;
         
-        int newValue = value - delta;
-        if (newValue < 0) newValue = this.maxValue;
-        if (newValue > this.maxValue) newValue = this.minValue;
-
+        int newValue = wrapValue(value - delta);
         setValue(newValue);
+        
         this.currentStep = step;
         this.valueChanged = true;
       }
     }
 
-    if (action == MotionEvent.ACTION_UP) {
+    if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
       this.currentStep = 0;
-      
+
       float x = event.getX();
       float y = event.getY();
 
       setPressed(false);
 
+      if (velocityTracker != null) {
+        velocityTracker.recycle();
+        velocityTracker = null;
+      }
+
       if (touchCancelled || !isPointInsideView(x, y)) {
         activePointerId = MotionEvent.INVALID_POINTER_ID;
         touchCancelled = false;
+        gestureMode = GestureMode.NONE;
         return true;
       }
-      
-      if (!this.valueChanged) {
+
+      if (!this.valueChanged && gestureMode != GestureMode.SWIPE) {
         this.onClick();
       }
 
       activePointerId = MotionEvent.INVALID_POINTER_ID;
       touchCancelled = false;
       valueChanged = false;
+      gestureMode = GestureMode.NONE;
     }
 
     return true;
+  }
+  
+  private void applyJump(int delta) {
+    Fun.log("applyJump " + delta);
+    int newValue = wrapValue(value + delta);
+    setValue(newValue);
+    this.valueChanged = true;
+  }
+  
+  private int wrapValue(int candidate) {
+    int range = maxValue - minValue + 1;
+    int normalized = (candidate - minValue) % range;
+    if (normalized < 0) normalized += range;
+    return minValue + normalized;
   }
   
   // IME-safe digit interception (soft keyboards call commitText, not onKeyDown)
