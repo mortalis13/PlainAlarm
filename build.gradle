@@ -1,4 +1,4 @@
-// gradle-8.3
+// gradle-8.4
 // jdk-17
 
 apply plugin: 'com.android.application'
@@ -22,8 +22,6 @@ allprojects {
   }
 }
 
-
-// -- app
 android {
   compileSdkVersion 34
   
@@ -31,7 +29,7 @@ android {
     namespace 'org.mortalis.plainalarm'
     vectorDrawables.useSupportLibrary = true
     
-    versionCode 161
+    versionCode 200
     versionName String.format('%d.%d.%d', (int)(versionCode/10/10), (int)(versionCode/10)%10, versionCode%10)
     
     minSdkVersion 16
