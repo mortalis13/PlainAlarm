@@ -10,8 +10,6 @@ App -> Battery saver -> No restrictions
 Apps -> Permissions -> Background autostart -> Enable
 
 
-
-
 API 16
 
 android.widget.NumberPicker
