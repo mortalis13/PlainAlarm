@@ -49,6 +49,7 @@ public class TimeInput extends AppCompatEditText {
   
   private boolean touchCancelled;
   private boolean valueChanged;
+  private boolean swipeStarted;
   
   private float downX;
   private float downY;
@@ -143,6 +144,7 @@ public class TimeInput extends AppCompatEditText {
       
       touchCancelled = false;
       valueChanged = false;
+      swipeStarted = false;
       
       activePointerId = event.getPointerId(0);
       this.downX = event.getX();
@@ -173,8 +175,18 @@ public class TimeInput extends AppCompatEditText {
       float yOffset = y - this.downY;
       int step = (int) (yOffset / STEP_SIZE);
       
-      if (yOffset != 0 && this.currentStep != step) {
+      if (yOffset != 0 && this.currentStep != step && !this.swipeStarted) {
         int delta = step - this.currentStep;
+        
+        Fun.log("delta " + delta);
+        if (Math.abs(delta) > 1) {
+          delta = 1 * (int) Math.signum(delta);
+          if (this.currentStep == 0) {
+            delta = 10 * (int) Math.signum(delta);
+            this.swipeStarted = true;
+            Fun.log("jump");
+          }
+        }
         
         int newValue = value - delta;
         if (newValue < 0) newValue = this.maxValue;
@@ -207,6 +219,7 @@ public class TimeInput extends AppCompatEditText {
       activePointerId = MotionEvent.INVALID_POINTER_ID;
       touchCancelled = false;
       valueChanged = false;
+      swipeStarted = false;
     }
 
     return true;
