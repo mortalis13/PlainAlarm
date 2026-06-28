@@ -1,5 +1,7 @@
 
 # Plain Alarm
+<img width="72" height="72" src="https://github.com/user-attachments/assets/38b26c56-c299-4ba4-a947-dbf73c00f497" />
+
 Simple Android alarm with handy controls
 
 <img width="200" src="https://github.com/user-attachments/assets/ed5f721b-64a6-48fb-b18d-6eac58d02cd0" />
